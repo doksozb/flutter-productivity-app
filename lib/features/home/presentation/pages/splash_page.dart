@@ -1,53 +1,43 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
-      backgroundColor: colorScheme.primary,
+      backgroundColor: AppColors.bgPrimary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                color: colorScheme.onPrimary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Icon(
-                Icons.check_circle_rounded,
-                size: 52,
-                color: colorScheme.onPrimary,
+              width: 64,
+              height: 64,
+              decoration: AppDecorations.logoTile,
+              child: const Icon(
+                Icons.layers_rounded,
+                color: AppColors.bgPrimary,
+                size: 34,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             Text(
               'Productivity Pro',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
+              style: AppTextStyles.displayMedium,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Stay focused. Get things done.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onPrimary.withValues(alpha: 0.75),
-                  ),
+              style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: 56),
-            SizedBox(
-              width: 32,
-              height: 32,
+            const SizedBox(
+              width: 24,
+              height: 24,
               child: CircularProgressIndicator(
-                color: colorScheme.onPrimary,
+                color: AppColors.accent,
                 strokeWidth: 2.5,
               ),
             ),

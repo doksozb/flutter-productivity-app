@@ -21,9 +21,8 @@ class ProductivityProApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Productivity Pro',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      theme: AppTheme.dark(),
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }

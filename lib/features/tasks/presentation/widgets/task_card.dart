@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../data/models/task_model.dart';
 import '../../providers/task_provider.dart';
 import 'task_form_sheet.dart';
@@ -12,8 +13,7 @@ class TaskCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isCompleted = task.isCompleted;
+    final done = task.isCompleted;
 
     return Dismissible(
       key: Key(task.id),
@@ -21,135 +21,120 @@ class TaskCard extends ConsumerWidget {
       onDismissed: (_) {
         ref.read(taskNotifierProvider.notifier).deleteTask(task.id);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Task deleted'),
-            action: SnackBarAction(label: 'Dismiss', onPressed: () {}),
-          ),
+          const SnackBar(content: Text('Task deleted')),
         );
       },
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          color: colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(Icons.delete_rounded, color: colorScheme.error, size: 28),
+        padding: const EdgeInsets.only(right: AppSpacing.xl),
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        decoration: AppDecorations.cardError,
+        child: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 22),
       ),
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => showTaskFormSheet(context, task: task),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Checkbox(
-                  value: isCompleted,
-                  onChanged: (value) {
-                    ref.read(taskNotifierProvider.notifier).toggleCompletion(
-                          taskId: task.id,
-                          isCompleted: value ?? false,
-                        );
-                  },
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+      child: GestureDetector(
+        onTap: () => showTaskFormSheet(context, task: task),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 14),
+          decoration: AppDecorations.card,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Checkbox
+              GestureDetector(
+                onTap: () {
+                  ref.read(taskNotifierProvider.notifier).toggleCompletion(
+                        taskId: task.id,
+                        isCompleted: !done,
+                      );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 22,
+                  height: 22,
+                  margin: const EdgeInsets.only(top: 1),
+                  decoration: done
+                      ? AppDecorations.checkboxChecked
+                      : AppDecorations.checkboxUnchecked,
+                  child: done
+                      ? const Icon(
+                          Icons.check_rounded,
+                          size: 13,
+                          color: AppColors.bgPrimary,
+                        )
+                      : null,
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 12, right: 12, bottom: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          task.title,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                decoration: isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                color: isCompleted
-                                    ? colorScheme.onSurfaceVariant
-                                    : colorScheme.onSurface,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: done ? AppColors.textMuted : AppColors.textPrimary,
+                        decoration: done ? TextDecoration.lineThrough : null,
+                        decorationColor: AppColors.textMuted,
+                      ),
+                    ),
+                    if (task.description.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        task.description,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textMuted,
                         ),
-                        if (task.description.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            task.description,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  decoration: isCompleted
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 7),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: 3,
                           ),
-                        ],
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: 12,
-                              color: colorScheme.onSurfaceVariant,
+                          decoration: AppDecorations.taskTag,
+                          child: Text(
+                            'Task',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.accent,
+                              fontSize: 10,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              DateFormat('MMM d, yyyy').format(task.createdAt),
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                            if (isCompleted) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  'Completed',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: Colors.green.shade700,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ],
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          _formatDate(task.createdAt),
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.textHint,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, right: 4),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime dt) {
+    final now   = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d     = DateTime(dt.year, dt.month, dt.day);
+    final diff  = today.difference(d).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    if (diff < 7) return 'This week';
+    return DateFormat('MMM d').format(dt);
   }
 }

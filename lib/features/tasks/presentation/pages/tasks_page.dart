@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
-import '../../../../core/widgets/empty_state_view.dart';
 import '../../data/models/task_model.dart';
 import '../../providers/task_provider.dart';
 import '../widgets/task_card.dart';
 import '../widgets/task_form_sheet.dart';
 
-enum _TaskFilter { all, active, completed }
+enum _TaskFilter { all, pending, done }
 
 class TasksPage extends ConsumerStatefulWidget {
   const TasksPage({super.key});
@@ -18,116 +18,216 @@ class TasksPage extends ConsumerStatefulWidget {
 }
 
 class _TasksPageState extends ConsumerState<TasksPage> {
-  _TaskFilter _selectedFilter = _TaskFilter.all;
+  _TaskFilter _filter = _TaskFilter.all;
 
-  List<TaskModel> _applyFilter(List<TaskModel> tasks) {
-    return switch (_selectedFilter) {
-      _TaskFilter.all => tasks,
-      _TaskFilter.active => tasks.where((t) => !t.isCompleted).toList(),
-      _TaskFilter.completed => tasks.where((t) => t.isCompleted).toList(),
-    };
-  }
+  List<TaskModel> _apply(List<TaskModel> tasks) => switch (_filter) {
+        _TaskFilter.all     => tasks,
+        _TaskFilter.pending => tasks.where((t) => !t.isCompleted).toList(),
+        _TaskFilter.done    => tasks.where((t) => t.isCompleted).toList(),
+      };
 
   @override
   Widget build(BuildContext context) {
     final tasksAsync = ref.watch(tasksStreamProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
-            title: const Text('My Tasks'),
-            floating: true,
-            snap: true,
-            forceElevated: innerBoxIsScrolled,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.add_rounded),
-                tooltip: 'Add Task',
-                onPressed: () => showTaskFormSheet(context),
-              ),
-              const SizedBox(width: 8),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(56),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                child: SegmentedButton<_TaskFilter>(
-                  segments: const [
-                    ButtonSegment(
-                      value: _TaskFilter.all,
-                      label: Text('All'),
-                      icon: Icon(Icons.list_rounded),
-                    ),
-                    ButtonSegment(
-                      value: _TaskFilter.active,
-                      label: Text('Active'),
-                      icon: Icon(Icons.radio_button_unchecked_rounded),
-                    ),
-                    ButtonSegment(
-                      value: _TaskFilter.completed,
-                      label: Text('Done'),
-                      icon: Icon(Icons.check_circle_rounded),
-                    ),
-                  ],
-                  selected: {_selectedFilter},
-                  onSelectionChanged: (selection) {
-                    setState(() => _selectedFilter = selection.first);
-                  },
-                  style: const ButtonStyle(
-                    visualDensity: VisualDensity.compact,
+      backgroundColor: AppColors.bgPrimary,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ─── Header ──────────────────────────────────────────────────────
+          Container(
+            color: AppColors.bgPrimary,
+            padding: const EdgeInsets.fromLTRB(22, AppSpacing.lg, 22, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('MY TASKS', style: AppTextStyles.overline),
+                      const SizedBox(height: AppSpacing.xs),
+                      tasksAsync.when(
+                        loading: () => const SizedBox(height: 28),
+                        error:   (_, __) => const SizedBox(height: 28),
+                        data: (tasks) => Text(
+                          '${tasks.length} Task${tasks.length == 1 ? '' : 's'}',
+                          style: AppTextStyles.displayMedium,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                GestureDetector(
+                  onTap: () => showTaskFormSheet(context),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: AppRadius.md,
+                    ),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      color: AppColors.bgPrimary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ─── Filter chips ─────────────────────────────────────────────────
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+              children: [
+                _FilterChip(
+                  label: 'All',
+                  active: _filter == _TaskFilter.all,
+                  onTap: () => setState(() => _filter = _TaskFilter.all),
+                ),
+                const SizedBox(width: 7),
+                _FilterChip(
+                  label: 'Pending',
+                  active: _filter == _TaskFilter.pending,
+                  onTap: () => setState(() => _filter = _TaskFilter.pending),
+                ),
+                const SizedBox(width: 7),
+                _FilterChip(
+                  label: 'Done',
+                  active: _filter == _TaskFilter.done,
+                  onTap: () => setState(() => _filter = _TaskFilter.done),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+
+          // ─── Task list ────────────────────────────────────────────────────
+          Expanded(
+            child: tasksAsync.when(
+              loading: () => const AppLoadingIndicator(message: 'Loading tasks…'),
+              error:   (err, _) => AppErrorView(message: err.toString()),
+              data: (tasks) {
+                final filtered = _apply(tasks);
+                if (filtered.isEmpty) {
+                  return _EmptyState(
+                    filter: _filter,
+                    onAdd: () => showTaskFormSheet(context),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) => TaskCard(task: filtered[i]),
+                );
+              },
             ),
           ),
         ],
-        body: tasksAsync.when(
-          loading: () => const AppLoadingIndicator(message: 'Loading tasks...'),
-          error: (err, _) => AppErrorView(message: err.toString()),
-          data: (tasks) {
-            final filtered = _applyFilter(tasks);
-            if (filtered.isEmpty) {
-              return _buildEmptyState(context, tasks.isEmpty);
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-              itemCount: filtered.length,
-              itemBuilder: (_, i) => TaskCard(task: filtered[i]),
-            );
-          },
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showTaskFormSheet(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Task'),
       ),
     );
   }
+}
 
-  Widget _buildEmptyState(BuildContext context, bool hasNoTasks) {
-    if (hasNoTasks || _selectedFilter == _TaskFilter.all) {
-      return EmptyStateView(
-        icon: Icons.task_alt_rounded,
-        title: 'No tasks yet',
-        subtitle: 'Create your first task to get started tracking your progress.',
-        actionLabel: 'Create Task',
-        onAction: () => showTaskFormSheet(context),
-      );
-    }
-    return EmptyStateView(
-      icon: _selectedFilter == _TaskFilter.active
-          ? Icons.radio_button_unchecked_rounded
-          : Icons.check_circle_rounded,
-      title: _selectedFilter == _TaskFilter.active
-          ? 'No active tasks'
-          : 'No completed tasks',
-      subtitle: _selectedFilter == _TaskFilter.active
-          ? 'All your tasks are completed. Great job!'
-          : 'Complete a task to see it here.',
+// ─── Filter chip ──────────────────────────────────────────────────────────────
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: active
+            ? AppDecorations.chipActive
+            : BoxDecoration(
+                border: Border.all(color: AppColors.borderDefault, width: 1),
+                borderRadius: AppRadius.full,
+              ),
+        child: Text(
+          label,
+          style: AppTextStyles.labelMedium.copyWith(
+            color: active ? AppColors.bgPrimary : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+class _EmptyState extends StatelessWidget {
+  final _TaskFilter filter;
+  final VoidCallback onAdd;
+
+  const _EmptyState({required this.filter, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final isAll = filter == _TaskFilter.all;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: AppDecorations.card,
+              child: const Icon(
+                Icons.checklist_rounded,
+                size: 24,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              isAll ? 'No tasks yet' : 'Nothing here',
+              style: AppTextStyles.displaySmall,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              isAll
+                  ? 'Tap + to create your first task'
+                  : 'No tasks match this filter',
+              style: AppTextStyles.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            if (isAll) ...[
+              const SizedBox(height: AppSpacing.xxl),
+              FilledButton(
+                onPressed: onAdd,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(140, 44),
+                ),
+                child: const Text('Create Task'),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

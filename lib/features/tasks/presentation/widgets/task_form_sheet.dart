@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../data/models/task_model.dart';
 import '../../providers/task_provider.dart';
 
@@ -8,8 +9,9 @@ void showTaskFormSheet(BuildContext context, {TaskModel? task}) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    backgroundColor: AppColors.bgSurface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (_) => TaskFormSheet(task: task),
   );
@@ -17,7 +19,6 @@ void showTaskFormSheet(BuildContext context, {TaskModel? task}) {
 
 class TaskFormSheet extends ConsumerStatefulWidget {
   final TaskModel? task;
-
   const TaskFormSheet({super.key, this.task});
 
   @override
@@ -26,8 +27,8 @@ class TaskFormSheet extends ConsumerStatefulWidget {
 
 class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleController;
-  late final TextEditingController _descriptionController;
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _descCtrl;
   bool _isLoading = false;
 
   bool get _isEditing => widget.task != null;
@@ -35,35 +36,33 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.task?.title);
-    _descriptionController =
-        TextEditingController(text: widget.task?.description);
+    _titleCtrl = TextEditingController(text: widget.task?.title);
+    _descCtrl  = TextEditingController(text: widget.task?.description);
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-
     setState(() => _isLoading = true);
     try {
       final notifier = ref.read(taskNotifierProvider.notifier);
       if (_isEditing) {
         await notifier.updateTask(
           taskId: widget.task!.id,
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
+          title: _titleCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
         );
       } else {
         await notifier.createTask(
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
+          title: _titleCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
         );
       }
       if (mounted) Navigator.pop(context);
@@ -80,93 +79,105 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Handle
             Center(
               child: Container(
-                margin: const EdgeInsets.only(top: 12),
+                margin: const EdgeInsets.only(top: AppSpacing.md),
                 width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
+                height: 3,
+                decoration: const BoxDecoration(
+                  color: AppColors.borderDefault,
+                  borderRadius: AppRadius.full,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _isEditing ? 'Edit Task' : 'New Task',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(22, 18, 22, 0),
+              child: Text(
+                _isEditing ? 'Edit Task' : 'Add New Task',
+                style: AppTextStyles.displaySmall,
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              padding: const EdgeInsets.fromLTRB(22, AppSpacing.lg, 22, 0),
               child: TextFormField(
-                controller: _titleController,
-                textInputAction: TextInputAction.next,
-                textCapitalization: TextCapitalization.sentences,
+                controller: _titleCtrl,
                 autofocus: !_isEditing,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.next,
+                style: AppTextStyles.bodyMedium,
                 decoration: const InputDecoration(
-                  labelText: 'Task Title',
-                  hintText: 'What needs to be done?',
+                  hintText: 'Task title...',
                 ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Title is required';
-                  return null;
-                },
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Title is required' : null,
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+              padding: const EdgeInsets.fromLTRB(22, AppSpacing.sm, 22, 0),
               child: TextFormField(
-                controller: _descriptionController,
-                textInputAction: TextInputAction.done,
-                textCapitalization: TextCapitalization.sentences,
+                controller: _descCtrl,
                 maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _save(),
+                style: AppTextStyles.bodyMedium,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Add details (optional)',
+                  hintText: 'Description (optional)',
                   alignLabelWithHint: true,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-              child: FilledButton(
-                onPressed: _isLoading ? null : _save,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(22, AppSpacing.lg, 22, AppSpacing.xxl),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.borderSubtle),
+                        foregroundColor: AppColors.textMuted,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: AppRadius.md,
                         ),
-                      )
-                    : Text(_isEditing ? 'Save Changes' : 'Create Task'),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _isLoading ? null : _save,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        minimumSize: Size.zero,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: AppRadius.md,
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.bgPrimary,
+                              ),
+                            )
+                          : const Text('Save Task'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

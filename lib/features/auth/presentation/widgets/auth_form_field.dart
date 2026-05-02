@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class AuthFormField extends StatefulWidget {
   final TextEditingController controller;
@@ -27,7 +28,7 @@ class AuthFormField extends StatefulWidget {
 }
 
 class _AuthFormFieldState extends State<AuthFormField> {
-  bool _obscureText = true;
+  bool _obscure = true;
 
   @override
   Widget build(BuildContext context) {
@@ -35,20 +36,22 @@ class _AuthFormFieldState extends State<AuthFormField> {
       controller: widget.controller,
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,
-      obscureText: widget.isPassword && _obscureText,
+      obscureText: widget.isPassword && _obscure,
       validator: widget.validator,
       onFieldSubmitted: (_) => widget.onFieldSubmitted?.call(),
+      style: AppTextStyles.bodyMedium,
       decoration: InputDecoration(
-        labelText: widget.label,
         hintText: widget.hint,
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
-                  _obscureText
+                  _obscure
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
+                  size: 18,
+                  color: AppColors.textMuted,
                 ),
-                onPressed: () => setState(() => _obscureText = !_obscureText),
+                onPressed: () => setState(() => _obscure = !_obscure),
               )
             : null,
       ),

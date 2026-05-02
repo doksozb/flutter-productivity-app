@@ -28,7 +28,7 @@ class AuthRouterNotifier extends ChangeNotifier {
 
     final isLoggedIn = authAsync.valueOrNull != null;
     final location = state.matchedLocation;
-    final isAuthPage = location == '/login' || location == '/signup';
+    final isAuthPage = location == '/login';
     final isSplash = location == '/splash';
 
     if (!isLoggedIn && !isAuthPage) return '/login';
