@@ -1,4 +1,4 @@
-<img width="1080" height="900" alt="tracky" src="https://github.com/user-attachments/assets/46517274-4dc8-4faf-833f-e1ac632274b2" />
+<img width="1880" height="900" alt="tracky" src="https://github.com/user-attachments/assets/46517274-4dc8-4faf-833f-e1ac632274b2" />
 
 
 # Productivity Pro
