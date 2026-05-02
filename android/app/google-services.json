@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "681065586207",
+    "project_id": "flutter-productivity-app",
+    "storage_bucket": "flutter-productivity-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681065586207:android:f179132c028a7bcb14bf2a",
+        "android_client_info": {
+          "package_name": "com.productivitypro.productivity_pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCP91GXQbdSrzHMUXxL4Cjzeq9XZgWBbD0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
